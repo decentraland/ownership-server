@@ -1,8 +1,6 @@
-import { IDatabase } from '@well-known-components/interfaces'
-import { Pool, PoolConfig, QueryResult, QueryResultRow } from 'pg'
+import { Pool, PoolConfig, QueryResultRow } from 'pg'
 import { SQLStatement } from 'sql-template-strings'
 import { AppComponents } from '../types'
-
 
 async function sleep(time: number): Promise<void> {
   if (time <= 0) return
@@ -10,14 +8,13 @@ async function sleep(time: number): Promise<void> {
 }
 
 export type DatabaseResult<T> = {
-  rows: T[],
+  rows: T[]
   rowCount: number
 }
 
-
 export type Database = {
-  start: () => Promise<void>,
-  stop: () => Promise<void>,
+  start: () => Promise<void>
+  stop: () => Promise<void>
   query: <T extends QueryResultRow>(query: SQLStatement) => Promise<DatabaseResult<T>>
   queryRaw: <T extends QueryResultRow>(query: string) => Promise<DatabaseResult<T>>
 }
