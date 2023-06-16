@@ -5,6 +5,7 @@ import { createFetchComponent } from "./adapters/fetch"
 import { createMetricsComponent, instrumentHttpServerWithMetrics } from "@well-known-components/metrics"
 import { AppComponents, GlobalContext } from "./types"
 import { metricDeclarations } from "./metrics"
+import { createDatabaseComponent } from "./adapters/postgres"
 
 // Initialize all the components of the app
 export async function initComponents(): Promise<AppComponents> {
@@ -14,6 +15,14 @@ export async function initComponents(): Promise<AppComponents> {
   const server = await createServerComponent<GlobalContext>({ config, logs }, {})
   const statusChecks = await createStatusCheckComponent({ server, config })
   const fetch = await createFetchComponent()
+  console.log(process.env.POSTGRES_HOST)
+  const database = createDatabaseComponent({ logs, metrics }, {
+    port: 5432,
+    host: process.env.POSTGRES_HOST ?? 'localhost',
+    database: 'substreams_admin',
+    user: process.env.POSTGRES_USER ?? 'substreams_admin',
+    password: process.env.POSTGRES_PASS ?? 'pass',
+  })
 
   await instrumentHttpServerWithMetrics({ metrics, server, config })
 
@@ -24,5 +33,6 @@ export async function initComponents(): Promise<AppComponents> {
     statusChecks,
     fetch,
     metrics,
+    database
   }
 }
