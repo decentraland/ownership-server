@@ -30,8 +30,8 @@ export function createDatabaseComponent(
   return {
     async start() {
       try {
-        const db = await pool.connect()
-        db.release()
+        // const db = await pool.connect()
+        // db.release()
       } catch (error) {
         logger.error('An error occurred trying to open the database. Did you run the migrations?')
         throw error
