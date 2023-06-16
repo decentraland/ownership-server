@@ -1,11 +1,21 @@
 // This file is the "test-environment" analogous for src/components.ts
 // Here we define the test components to be used in the testing environment
 
-import { createRunner, createLocalFetchCompoment } from "@well-known-components/test-helpers"
+import { createRunner, createLocalFetchCompoment } from '@well-known-components/test-helpers'
 
-import { main } from "../src/service"
-import { TestComponents } from "../src/types"
-import { initComponents as originalInitComponents } from "../src/components"
+import { main } from '../src/service'
+import { TestComponents } from '../src/types'
+import { initComponents as originalInitComponents } from '../src/components'
+import { Database } from '../src/adapters/postgres'
+
+function createTestDatabase(): Database {
+  return {
+    start: jest.fn(),
+    stop: jest.fn(),
+    query: jest.fn(),
+    queryRaw: jest.fn()
+  }
+}
 
 /**
  * Behaves like Jest "describe" function, used to describe a test for a
@@ -16,7 +26,7 @@ import { initComponents as originalInitComponents } from "../src/components"
  */
 export const test = createRunner<TestComponents>({
   main,
-  initComponents,
+  initComponents
 })
 
 async function initComponents(): Promise<TestComponents> {
@@ -24,8 +34,11 @@ async function initComponents(): Promise<TestComponents> {
 
   const { config } = components
 
+  const database = createTestDatabase()
+
   return {
     ...components,
-    localFetch: await createLocalFetchCompoment(config),
+    database,
+    localFetch: await createLocalFetchCompoment(config)
   }
 }
