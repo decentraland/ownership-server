@@ -6,6 +6,16 @@ import { createRunner, createLocalFetchCompoment } from '@well-known-components/
 import { main } from '../src/service'
 import { TestComponents } from '../src/types'
 import { initComponents as originalInitComponents } from '../src/components'
+import { Database } from '../src/adapters/postgres'
+
+function createTestDatabase(): Database {
+  return {
+    start: jest.fn(),
+    stop: jest.fn(),
+    query: jest.fn(),
+    queryRaw: jest.fn()
+  }
+}
 
 /**
  * Behaves like Jest "describe" function, used to describe a test for a
@@ -24,8 +34,11 @@ async function initComponents(): Promise<TestComponents> {
 
   const { config } = components
 
+  const database = createTestDatabase()
+
   return {
     ...components,
+    database,
     localFetch: await createLocalFetchCompoment(config)
   }
 }
