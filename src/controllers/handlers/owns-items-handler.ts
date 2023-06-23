@@ -2,6 +2,7 @@ import { HandlerContextWithPath } from '../../types'
 import { ownsItems as ownsItemUrns } from '../../logic/owns-items'
 import { BlockchainCollectionV2Asset, parseUrn as resolverParseUrn } from '@dcl/urn-resolver'
 import { InvalidRequestError } from './error-handler'
+import { EthAddress } from '@dcl/schemas'
 
 export async function parseUrn(urn: string) {
   try {
@@ -38,53 +39,37 @@ async function parseInput(
 
   const parsedTimestamp = Number(timestamp)
   if (isNaN(parsedTimestamp)) {
-    throw new InvalidRequestError('Invalid timestamp')
+    throw new InvalidRequestError(`Invalid timestamp: ${parsedTimestamp}`)
   }
 
-  const lowercasedAddress = address.toLowerCase()
-  // if (!EthAddress.validate(address)) {
-  //   throw new Error('Invalid eth address')
-  // }
+  if (!EthAddress.validate(address)) {
+    throw new InvalidRequestError(`Invalid eth address: ${address}`)
+  }
 
   return {
-    address: lowercasedAddress,
+    address: address.toLowerCase(),
     itemUrns: parsedUrns,
     timestamp: parsedTimestamp
   }
 }
 
-export async function ownsItemsHandler(context: HandlerContextWithPath<'metrics' | 'database', '/ownsItems'>) {
-  try {
-    const curatedInput = await parseInput(context)
-    console.log(`Validated input:`)
-    console.log(curatedInput)
-    const ownedUrns = await ownsItemUrns(
-      context.components,
-      curatedInput.address,
-      curatedInput.itemUrns,
-      curatedInput.timestamp
-    )
-    return {
-      body: {
-        ownedUrns
-      }
-    }
-  } catch (error) {
-    if (error instanceof InvalidRequestError) {
-      return {
-        status: 400,
-        body: {
-          error: 'Bad request',
-          message: error.message
-        }
-      }
-    }
-    console.log(error)
-    return {
-      status: 500,
-      body: {
-        error: 'Internal Server Error'
-      }
+export async function ownsItemsHandler(context: HandlerContextWithPath<'database' | 'logs' | 'metrics', '/ownsItems'>) {
+  const { logs } = context.components
+  const logger = logs.getLogger('ownsItemsHandler')
+
+  const curatedInput = await parseInput(context)
+  logger.debug(`Validated input: ${JSON.stringify(curatedInput)}`)
+
+  const ownedUrns = await ownsItemUrns(
+    context.components,
+    curatedInput.address,
+    curatedInput.itemUrns,
+    curatedInput.timestamp
+  )
+
+  return {
+    body: {
+      ownedUrns
     }
   }
 }
