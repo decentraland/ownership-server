@@ -15,16 +15,15 @@ export async function initComponents(): Promise<AppComponents> {
   const server = await createServerComponent<GlobalContext>({ config, logs }, {})
   const statusChecks = await createStatusCheckComponent({ server, config })
   const fetch = await createFetchComponent()
-  const database = createDatabaseComponent(
-    { logs, metrics },
-    {
-      port: parseInt(process.env.POSTGRES_PORT ?? '5432'),
-      host: process.env.POSTGRES_HOST ?? 'localhost',
-      database: 'substreams_admin',
-      user: process.env.POSTGRES_USER ?? 'substreams_admin',
-      password: process.env.POSTGRES_PASS ?? 'pass'
-    }
-  )
+  const postgresConfig = {
+    host: await config.requireString('POSTGRES_HOST'),
+    port: await config.requireNumber('POSTGRES_PORT'),
+    database: await config.requireString('POSTGRES_DATABASE'),
+    user: await config.requireString('POSTGRES_USER'),
+    password: await config.requireString('POSTGRES_PASS')
+  }
+
+  const database = createDatabaseComponent({ logs, metrics }, postgresConfig)
 
   await instrumentHttpServerWithMetrics({ metrics, server, config })
 
