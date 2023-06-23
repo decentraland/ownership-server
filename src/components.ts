@@ -15,11 +15,10 @@ export async function initComponents(): Promise<AppComponents> {
   const server = await createServerComponent<GlobalContext>({ config, logs }, {})
   const statusChecks = await createStatusCheckComponent({ server, config })
   const fetch = await createFetchComponent()
-  console.log(process.env.POSTGRES_HOST)
   const database = createDatabaseComponent(
     { logs, metrics },
     {
-      port: 5432,
+      port: parseInt(process.env.POSTGRES_PORT ?? '5432'),
       host: process.env.POSTGRES_HOST ?? 'localhost',
       database: 'substreams_admin',
       user: process.env.POSTGRES_USER ?? 'substreams_admin',
