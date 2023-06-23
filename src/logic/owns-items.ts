@@ -9,16 +9,26 @@ export async function parseUrn(urn: string) {
   }
 }
 
+// function createQuery(address: string, collectionIds: string[], itemIds: string[], timestamp: number) {
+//   return `
+//   select t.collection_id, n.item_id
+//   from nfts n
+//   join transfers t on t.token_id = n.token_id and t.collection_id = n.collection_id
+//   where n.collection_id in (${collectionIds.map((collectionId) => `'${collectionId}'`).join(',')})
+//   and n.item_id in (${itemIds.map((itemId) => `'${itemId}'`).join(',')})
+//   and to_address = '${address}'
+//   and block_timestamp <= ${timestamp}
+//   group by t.collection_id, n.item_id;`
+// }
+
 function createQuery(address: string, collectionIds: string[], itemIds: string[], timestamp: number) {
   return `
-  select t.collection_id, n.item_id
-  from nfts n
-  join transfers t on t.token_id = n.token_id and t.collection_id = n.collection_id
-  where n.collection_id in (${collectionIds.map((collectionId) => `'${collectionId}'`).join(',')})
-  and n.item_id in (${itemIds.map((itemId) => `'${itemId}'`).join(',')})
-  and to_address = '${address}'
-  and block_timestamp <= ${timestamp}
-  group by t.collection_id, n.item_id;`
+select collection_id, item_id
+from nfts n
+where owner = '${address}'
+and n.collection_id in (${collectionIds.map((collectionId) => `'${collectionId}'`).join(',')})
+and n.item_id in (${itemIds.map((itemId) => `'${itemId}'`).join(',')})
+and CAST(updated_at AS INTEGER) <= ${timestamp};`
 }
 
 export async function ownsItems(
