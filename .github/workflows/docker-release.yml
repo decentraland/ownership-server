@@ -1,5 +1,4 @@
 name: Publish 'latest' image
-name: Publish 'latest' image
 
 on:
   release:
