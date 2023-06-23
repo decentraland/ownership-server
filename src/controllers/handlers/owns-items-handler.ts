@@ -1,19 +1,13 @@
 import { HandlerContextWithPath } from '../../types'
 import { ownsItems as ownsItemUrns } from '../../logic/owns-items'
 import { BlockchainCollectionV2Asset, parseUrn as resolverParseUrn } from '@dcl/urn-resolver'
+import { InvalidRequestError } from './error-handler'
 
 export async function parseUrn(urn: string) {
   try {
     return await resolverParseUrn(urn)
   } catch (err: any) {
     return null
-  }
-}
-
-export class InvalidRequestError extends Error {
-  constructor(message: string) {
-    super(message)
-    Error.captureStackTrace(this, this.constructor)
   }
 }
 
