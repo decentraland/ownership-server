@@ -9,19 +9,23 @@ export async function parseUrn(urn: string) {
   }
 }
 
-function createQuery(address: string, collectionIds: string[], itemIds: string[]) {
+function createQuery(address: string, collectionIds: string[], itemIds: string[], timestamp: number) {
   return `
-select collection_id, item_id
+select t.collection_id, n.item_id
 from nfts n
-where owner = '${address}'
-and n.collection_id in (${collectionIds.map((collectionId) => `'${collectionId}'`).join(',')})
-and n.item_id in (${itemIds.map((itemId) => `'${itemId}'`).join(',')});`
+join transfers t on t.token_id = n.token_id and t.collection_id = n.collection_id
+where n.collection_id in (${collectionIds.map((collectionId) => `'${collectionId}'`).join(',')})
+and n.item_id in (${itemIds.map((itemId) => `'${itemId}'`).join(',')})
+and to_address = '${address}'
+and block_timestamp <= ${timestamp}
+group by t.collection_id, n.item_id;`
 }
 
-export async function ownsItems(
+export async function ownedItemsAtTimestamp(
   components: Pick<AppComponents, 'database'>,
   address: string,
-  itemUrns: BlockchainCollectionV2Asset[]
+  itemUrns: BlockchainCollectionV2Asset[],
+  atTimestamp: number
 ) {
   if (itemUrns.length === 0) {
     return []
@@ -29,7 +33,7 @@ export async function ownsItems(
   const collectionIds = itemUrns.map((urn) => urn.contractAddress)
   const itemIds = itemUrns.map((urn) => `${urn.contractAddress}-${urn.id}`)
 
-  const query = createQuery(address, collectionIds, itemIds)
+  const query = createQuery(address, collectionIds, itemIds, atTimestamp)
 
   console.log(query)
 
