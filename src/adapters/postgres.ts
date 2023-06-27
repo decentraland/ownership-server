@@ -1,6 +1,7 @@
 import { Pool, PoolConfig, QueryResultRow } from 'pg'
 import { SQLStatement } from 'sql-template-strings'
 import { AppComponents } from '../types'
+import { IMetricsComponent } from '@well-known-components/interfaces'
 
 async function sleep(time: number): Promise<void> {
   if (time <= 0) return
@@ -16,18 +17,62 @@ export type Database = {
   start: () => Promise<void>
   stop: () => Promise<void>
   query: <T extends QueryResultRow>(query: SQLStatement) => Promise<DatabaseResult<T>>
-  queryRaw: <T extends QueryResultRow>(query: string) => Promise<DatabaseResult<T>>
+  queryRaw: <T extends QueryResultRow>(
+    query: string,
+    metricLabels?: IMetricsComponent.Labels
+  ) => Promise<DatabaseResult<T>>
 }
 
 export function createDatabaseComponent(
   components: Pick<AppComponents, 'logs' | 'metrics'>,
-  poolConfig: PoolConfig
+  poolConfig: PoolConfig,
+  logQueryEnabled: boolean = false
 ): Database {
   const pool: Pool = new Pool(poolConfig)
   const logger = components.logs.getLogger('database-component')
+  const queryLogger = logQueryEnabled ? components.logs.getLogger('database-component-query') : { debug: () => {} }
+  const resultLogger = logQueryEnabled ? components.logs.getLogger('database-component-result') : { debug: () => {} }
   let didStop = false
 
+  function generateRandomId(length: number) {
+    const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    let randomId = ''
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length)
+      randomId += characters.charAt(randomIndex)
+    }
+    return randomId
+  }
+
   return {
+    async query<T extends QueryResultRow>(sql: SQLStatement): Promise<DatabaseResult<T>> {
+      const rows = await pool.query<T>(sql)
+      return {
+        rows: rows.rows,
+        rowCount: rows.rowCount
+      }
+    },
+    async queryRaw<T extends QueryResultRow>(
+      sql: string,
+      metricLabels?: IMetricsComponent.Labels
+    ): Promise<DatabaseResult<T>> {
+      const endTimer = components.metrics.startTimer('ownership_server_db_query_duration_seconds', metricLabels).end
+      try {
+        const queryId = generateRandomId(10)
+        queryLogger.debug(sql, { queryId })
+        const rows = await pool.query<T>(sql)
+        resultLogger.debug(JSON.stringify(rows.rows), { queryId })
+        endTimer({ status: 'success' })
+        return {
+          rows: rows.rows,
+          rowCount: rows.rowCount
+        }
+      } catch (error: any) {
+        endTimer({ status: 'error' })
+        logger.error(error)
+        throw error
+      }
+    },
     async start() {
       try {
         const db = await pool.connect()
@@ -71,20 +116,6 @@ export function createDatabaseComponent(
       }
 
       await promise
-    },
-    async query<T extends QueryResultRow>(sql: SQLStatement): Promise<DatabaseResult<T>> {
-      const rows = await pool.query<T>(sql)
-      return {
-        rows: rows.rows,
-        rowCount: rows.rowCount
-      }
-    },
-    async queryRaw<T extends QueryResultRow>(sql: string): Promise<DatabaseResult<T>> {
-      const rows = await pool.query<T>(sql)
-      return {
-        rows: rows.rows,
-        rowCount: rows.rowCount
-      }
     }
   }
 }

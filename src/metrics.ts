@@ -9,6 +9,11 @@ export const metricDeclarations = {
     help: 'Count calls to ping',
     type: IMetricsComponent.CounterType,
     labelNames: ['pathname']
+  },
+  ownership_server_db_query_duration_seconds: {
+    help: 'Histogram of query duration to the database in seconds per query',
+    type: IMetricsComponent.HistogramType,
+    labelNames: ['query', 'status', 'addresses', 'item_ids'] // status=(success|error)
   }
 }
 

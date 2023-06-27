@@ -35,11 +35,11 @@ export async function ownedItemsAtTimestamp(
 
   const query = createQuery(address, collectionIds, itemIds, atTimestamp)
 
-  console.log(query)
-
-  const queryResult = await components.database.queryRaw<{ collection_id: string; item_id: string }>(query)
-
-  console.log(queryResult)
+  const queryResult = await components.database.queryRaw<{ collection_id: string; item_id: string }>(query, {
+    query: 'owned_items_at_timestamp',
+    addresses: 1,
+    item_ids: itemIds.length
+  })
 
   const ownedItemIds = new Set(queryResult.rows.map((row) => row.item_id))
 
