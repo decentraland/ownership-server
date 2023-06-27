@@ -23,7 +23,9 @@ export async function initComponents(): Promise<AppComponents> {
     password: await config.requireString('POSTGRES_PASS')
   }
 
-  const database = createDatabaseComponent({ logs, metrics }, postgresConfig)
+  const logQueryEnabled = (await config.requireString('LOG_QUERY_ENABLED')) === 'true'
+
+  const database = createDatabaseComponent({ logs, metrics }, postgresConfig, logQueryEnabled)
 
   await instrumentHttpServerWithMetrics({ metrics, server, config })
 
