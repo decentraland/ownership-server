@@ -27,6 +27,14 @@ export async function ownsItemsByAddress(
     addresses.push(address)
     allItemIds.push(...itemUrns.map((urn) => `${urn.contractAddress}-${urn.id}`))
   }
+
+  if (allItemIds.length === 0) {
+    return itemUrnsByAddress.map((itemUrnsOfAddress) => ({
+      address: itemUrnsOfAddress.address,
+      itemUrns: []
+    }))
+  }
+
   const query = createQuery(addresses, allItemIds)
 
   const queryResult = await components.database.queryRaw<{ owner: string; itemId: string }>(query, {
@@ -37,10 +45,10 @@ export async function ownsItemsByAddress(
 
   const ownedItemIdsByOwner = new Map<string, Set<string>>()
 
+  for (const address of addresses) {
+    ownedItemIdsByOwner.set(address, new Set())
+  }
   for (const { owner, itemId } of queryResult.rows) {
-    if (!ownedItemIdsByOwner.has(owner)) {
-      ownedItemIdsByOwner.set(owner, new Set())
-    }
     ownedItemIdsByOwner.get(owner)!.add(itemId)
   }
 
