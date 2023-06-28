@@ -2,6 +2,7 @@
   "name": "@dcl/ownership-server",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json --watch",
     "start": "node --trace-warnings --abort-on-uncaught-exception --unhandled-rejections=strict dist/index.js",
     "test": "jest --forceExit --detectOpenHandles --coverage --verbose",
     "lint:check": "eslint '**/*.{js,ts}'",
@@ -30,7 +31,7 @@
     "@well-known-components/interfaces": "^1.4.1",
     "@well-known-components/logger": "^3.1.2",
     "@well-known-components/metrics": "^2.0.1-20220909150423.commit-8f7e5bc",
-    "pg": "8.11.0",
+    "pg": "^8.11.1",
     "sql-template-strings": "^2.2.2"
   }
 }
