@@ -4,7 +4,9 @@ import { AppComponents } from '../types'
 import { IMetricsComponent } from '@well-known-components/interfaces'
 
 async function sleep(time: number): Promise<void> {
-  if (time <= 0) return
+  if (time <= 0) {
+    return
+  }
   return new Promise<void>((resolve) => setTimeout(resolve, time))
 }
 
