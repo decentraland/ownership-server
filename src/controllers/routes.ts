@@ -5,6 +5,7 @@ import { ownsItemsHandler } from './handlers/owns-items-handler'
 import { errorHandler } from './handlers/error-handler'
 import { ownedItemsAtTimestampHandler } from './handlers/owned-items-at-timestamp-handler'
 import { ownsItemUrnsByAddressHandler } from './handlers/owns-items-by-address-handler'
+import { allOwnedItemsByAddressHandler } from './handlers/all-owned-items-by-address-handler'
 
 // We return the entire router because it will be easier to test than a whole server
 export async function setupRouter(_globalContext: GlobalContext): Promise<Router<GlobalContext>> {
@@ -15,6 +16,7 @@ export async function setupRouter(_globalContext: GlobalContext): Promise<Router
   router.get('/ownsItems', ownsItemsHandler)
   router.get('/ownedItemsAtTimestamp', ownedItemsAtTimestampHandler)
   router.post('/ownsItemsByAddress', ownsItemUrnsByAddressHandler)
+  router.get('/allOwnedItemsByAddress/:address', allOwnedItemsByAddressHandler)
 
   return router
 }
