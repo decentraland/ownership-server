@@ -23,6 +23,7 @@
       {
         "allowArrowFunctions": false
       }
-    ]
+    ],
+    "curly": "error"
   }
 }
