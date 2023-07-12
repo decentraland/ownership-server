@@ -28,7 +28,7 @@ type Transfer = {
   createdAt: number
 }
 
-function createTransfersToRollbackQuery(timestamp: number) {
+function createTransfersAfterTimestampQuery(timestamp: number) {
   return `select token_id AS "tokenId", collection_id AS "collectionId", from_address AS "fromAddress", to_address AS "toAddress", created_at AS "createdAt" from transfers where created_at > ${timestamp} order by created_at desc;`
 }
 
@@ -40,18 +40,23 @@ function createPreviousTransferQuery(transfer: Transfer) {
   return `select token_id AS "tokenId", collection_id AS "collectionId", from_address AS "fromAddress", to_address AS "toAddress", created_at AS "createdAt" from transfers where token_id = '${transfer.tokenId}' and collection_id = '${transfer.collectionId}' and created_at < '${transfer.createdAt}' order by created_at desc limit 1;`
 }
 
-async function updateNFTsWithPreviousTransferIfExist(
+async function updateNFTsWithLastTransferBeforeTimestampIfExist(
   components: Pick<AppComponents, 'database'>,
   lastValidBlockTimestamp: number
 ) {
-  const transfersToRollbackQuery = createTransfersToRollbackQuery(lastValidBlockTimestamp)
+  const transfersAfterTimestampQuery = createTransfersAfterTimestampQuery(lastValidBlockTimestamp)
 
-  const transfersToRollbackQueryResult = await components.database.queryRaw<Transfer>(transfersToRollbackQuery, {
-    query: 'transfers_to_rollback'
-  })
+  const transfersAfterTimestampQueryResult = await components.database.queryRaw<Transfer>(
+    transfersAfterTimestampQuery,
+    {
+      query: 'transfers_after_timestamp'
+    }
+  )
 
-  const transfersToRollback = transfersToRollbackQueryResult.rows
+  const transfersToRollback = transfersAfterTimestampQueryResult.rows
 
+  // Note: It's important that transfers are order from the most recent to the oldest. This is because if the same nft
+  // has been transferred multiple times after the last valid block timestamp, the last one must take effect (the oldest one).
   for (const transfer of transfersToRollback) {
     const previousTransferQuery = createPreviousTransferQuery(transfer)
     const previousTransferQueryResult = await components.database.queryRaw<Transfer>(previousTransferQuery, {
@@ -82,13 +87,13 @@ async function deleteRowsInTableAfterTimestamp(
   // })
 }
 
-export async function rollbackFromBlockNumber(
+export async function rollbackToLastValidBlockNumber(
   components: Pick<AppComponents, 'database'>,
   lastValidBlockNumber: number
 ): Promise<void> {
   const lastValidBlockTimestamp = await getLastValidBlockTimestamp(components, lastValidBlockNumber)
 
-  await updateNFTsWithPreviousTransferIfExist(components, lastValidBlockTimestamp)
+  await updateNFTsWithLastTransferBeforeTimestampIfExist(components, lastValidBlockTimestamp)
 
   await deleteRowsInTableAfterTimestamp(components, 'nfts', lastValidBlockTimestamp)
   await deleteRowsInTableAfterTimestamp(components, 'items', lastValidBlockTimestamp)

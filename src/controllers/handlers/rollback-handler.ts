@@ -1,4 +1,4 @@
-import { rollbackFromBlockNumber } from '../../logic/rollback-from-block-number'
+import { rollbackToLastValidBlockNumber } from '../../logic/rollback-to-last-valid-block-number'
 import { HandlerContextWithPath } from '../../types'
 import { InvalidRequestError } from './error-handler'
 
@@ -27,7 +27,7 @@ async function parseInput(context: HandlerContextWithPath<'metrics' | 'database'
 export async function rollbackHandler(context: HandlerContextWithPath<'database' | 'logs' | 'metrics', '/rollback'>) {
   const curatedInput = await parseInput(context)
   console.log(curatedInput)
-  await rollbackFromBlockNumber(context.components, curatedInput.lastValidBlock)
+  await rollbackToLastValidBlockNumber(context.components, curatedInput.lastValidBlock)
   return {
     body: {
       lastValidBlock: curatedInput.lastValidBlock
