@@ -6,6 +6,7 @@ import { errorHandler } from './handlers/error-handler'
 import { ownedItemsAtTimestampHandler } from './handlers/owned-items-at-timestamp-handler'
 import { ownsItemsByAddressHandler } from './handlers/owns-items-by-address-handler'
 import { rollbackHandler } from './handlers/rollback-handler'
+import { allOwnedItemsByAddressHandler } from './handlers/all-owned-items-by-address-handler'
 
 // We return the entire router because it will be easier to test than a whole server
 export async function setupRouter(_globalContext: GlobalContext): Promise<Router<GlobalContext>> {
@@ -17,6 +18,7 @@ export async function setupRouter(_globalContext: GlobalContext): Promise<Router
   router.get('/ownedItemsAtTimestamp', ownedItemsAtTimestampHandler)
   router.post('/ownsItemsByAddress', ownsItemsByAddressHandler)
   router.get('/rollback', rollbackHandler)
+  router.get('/allOwnedItemsByAddress/:address', allOwnedItemsByAddressHandler)
 
   return router
 }
