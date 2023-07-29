@@ -56,22 +56,25 @@ async function updateNFTsWithLastTransferBeforeTimestampIfExist(
   const transfersToRollback = transfersAfterTimestampQueryResult.rows
 
   // Note: It's important that transfers are order from the most recent to the oldest. This is because if the same nft
-  // has been transferred multiple times after the last valid block timestamp, the last one must take effect (the oldest one).
+  // has been transferred multiple times after the last valid block timestamp, the previous of the oldest one (the last one in the sorted desc array) must take effect.
   for (const transfer of transfersToRollback) {
     const previousTransferQuery = createPreviousTransferQuery(transfer)
     const previousTransferQueryResult = await components.database.queryRaw<Transfer>(previousTransferQuery, {
       query: 'previous_transfer'
     })
 
+    // NOTE: If there is no previous transfer, it means that it's the first transfer of the nft. The first transfer is done at the same block of the nft minting.
+    // So there's no need to update the owner of the nft as the nft and this transfer will be erased in the rollback later.
     if (previousTransferQueryResult.rows.length > 0) {
       const previousTransfer = previousTransferQueryResult.rows[0]
       console.log(`new owner from previous: ${previousTransfer.toAddress}`)
       console.log(`new updated_at from previous: ${previousTransfer.createdAt}`)
       const updateQuery = createUpdateNFTWithPreviousTransferQuery(previousTransfer)
       console.log(updateQuery)
+      await components.database.queryRaw(updateQuery, {
+        query: `update_owner`
+      })
     }
-    // NOTE: If there is no previous transfer, it means that it's the first transfer of the nft. The first transfer is done at the same block of the nft minting.
-    // So there's no need to update the owner of the nft as the nft and this transfer will be erased in the rollback later.
   }
 }
 
@@ -82,9 +85,17 @@ async function deleteRowsInTableAfterTimestamp(
 ) {
   const query = `delete from ${tableName} where created_at > ${timestamp};`
   console.log(query)
-  // await components.database.queryRaw(query, {
-  //   query: `delete_${tableName}`
-  // })
+  await components.database.queryRaw(query, {
+    query: `delete_${tableName}`
+  })
+}
+
+async function deleteBlocksAfterTimestamp(components: Pick<AppComponents, 'database'>, timestamp: number) {
+  const query = `delete from blocks where block_timestamp > ${timestamp};`
+  console.log(query)
+  await components.database.queryRaw(query, {
+    query: `delete_blocks`
+  })
 }
 
 export async function rollbackToLastValidBlockNumber(
@@ -92,12 +103,12 @@ export async function rollbackToLastValidBlockNumber(
   lastValidBlockNumber: number
 ): Promise<void> {
   const lastValidBlockTimestamp = await getLastValidBlockTimestamp(components, lastValidBlockNumber)
-
+  // TODO: make the rollback transactional
   await updateNFTsWithLastTransferBeforeTimestampIfExist(components, lastValidBlockTimestamp)
 
   await deleteRowsInTableAfterTimestamp(components, 'nfts', lastValidBlockTimestamp)
   await deleteRowsInTableAfterTimestamp(components, 'items', lastValidBlockTimestamp)
   await deleteRowsInTableAfterTimestamp(components, 'collections', lastValidBlockTimestamp)
   await deleteRowsInTableAfterTimestamp(components, 'transfers', lastValidBlockTimestamp)
-  await deleteRowsInTableAfterTimestamp(components, 'blocks', lastValidBlockTimestamp)
+  await deleteBlocksAfterTimestamp(components, lastValidBlockTimestamp)
 }
