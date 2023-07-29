@@ -65,7 +65,7 @@ async function parseInput(
   }
 }
 
-export async function ownsitemUrnsByAddressHandler(
+export async function ownsItemUrnsByAddressHandler(
   context: HandlerContextWithPath<'database' | 'logs' | 'metrics', '/ownsitemUrnsByAddress'>
 ) {
   const { logs } = context.components
