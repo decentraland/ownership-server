@@ -9,6 +9,23 @@ where owner in (${addresses.map((address) => `'${address}'`).join(',')})
 and item_id in (${itemIds.map((itemId) => `'${itemId}'`).join(',')});`
 }
 
+function createQuery2(
+  itemUrnsByAddress: {
+    address: string
+    itemUrns: BlockchainCollectionV2Asset[]
+  }[]
+) {
+  return `
+select owner, item_id AS "itemId"
+from nfts
+where ${itemUrnsByAddress
+    .map(
+      ({ address, itemUrns }) =>
+        `(owner = '${address}' and item_id in (${itemUrns.map((urn) => `'${urn.contractAddress}-${urn.id}'`)}))`
+    )
+    .join(' or ')};`
+}
+
 export async function ownsItemsByAddress(
   components: Pick<AppComponents, 'database'>,
   itemUrnsByAddress: {
@@ -36,6 +53,9 @@ export async function ownsItemsByAddress(
   }
 
   const query = createQuery(addresses, allItemIds)
+  // const query2 = createQuery2(itemUrnsByAddress)
+  console.log(query)
+  // console.log(query2)
 
   const queryResult = await components.database.queryRaw<{ owner: string; itemId: string }>(query, {
     query: 'owns_items_by_address',
