@@ -61,7 +61,7 @@ async function rollbackTransfer(components: Pick<AppComponents, 'database'>, tra
 }
 
 async function updateNFTsWithLastTransferBeforeTimestampIfExist(
-  components: Pick<AppComponents, 'database'>,
+  components: Pick<AppComponents, 'database' | 'metrics'>,
   lastValidBlockTimestamp: number
 ) {
   const transfersAfterTimestampQuery = createTransfersAfterTimestampQuery(lastValidBlockTimestamp)
@@ -87,6 +87,7 @@ async function updateNFTsWithLastTransferBeforeTimestampIfExist(
   }
 
   await Promise.all(transfersToRollback.map((transfer) => rollbackTransfer(components, transfer)))
+  components.metrics.increment('ownership_server_rollbacked_transfers_total', {}, transfersToRollback.length)
 }
 
 async function deleteRowsInTableAfterTimestamp(

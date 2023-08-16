@@ -15,10 +15,9 @@ export const metricDeclarations = {
     type: IMetricsComponent.HistogramType,
     labelNames: ['query', 'status', 'addresses', 'item_ids'] // status=(success|error)
   },
-  ownership_server_rollback_duration_seconds: {
+  ownership_server_rollbacked_transfers_total: {
     help: 'Histogram of rollback duration in seconds',
-    type: IMetricsComponent.HistogramType
-    // labelNames: ['query', 'status', 'addresses', 'item_ids'] // status=(success|error)
+    type: IMetricsComponent.CounterType
   }
 }
 
