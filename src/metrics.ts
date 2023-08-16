@@ -14,6 +14,10 @@ export const metricDeclarations = {
     help: 'Histogram of query duration to the database in seconds per query',
     type: IMetricsComponent.HistogramType,
     labelNames: ['query', 'status', 'addresses', 'item_ids'] // status=(success|error)
+  },
+  ownership_server_rollbacked_transfers_total: {
+    help: 'Histogram of rollback duration in seconds',
+    type: IMetricsComponent.CounterType
   }
 }
 
