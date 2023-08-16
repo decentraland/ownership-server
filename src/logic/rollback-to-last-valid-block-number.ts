@@ -111,7 +111,7 @@ async function deleteBlocksAfterTimestamp(components: Pick<AppComponents, 'datab
 }
 
 export async function rollbackToLastValidBlockNumber(
-  components: Pick<AppComponents, 'database'>,
+  components: Pick<AppComponents, 'database' | 'metrics'>,
   lastValidBlockNumber: number
 ): Promise<void> {
   const lastValidBlockTimestamp = await getLastValidBlockTimestamp(components, lastValidBlockNumber)
