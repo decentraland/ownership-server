@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@dcl/schemas": "^7.4.1",
-    "@dcl/urn-resolver": "^2.0.3",
+    "@dcl/urn-resolver": "^3.4.0",
     "@well-known-components/env-config-provider": "^1.1.1",
     "@well-known-components/http-server": "^1.1.6-20220927190058.commit-2dfb235",
     "@well-known-components/interfaces": "^1.4.1",

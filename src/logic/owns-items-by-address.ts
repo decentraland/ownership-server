@@ -1,10 +1,10 @@
 import { AppComponents } from '../types'
 import { BlockchainCollectionV2Asset } from '@dcl/urn-resolver'
 
-function createQuery(addresses: string[], itemIds: string[]) {
+function createQuery(schema: string, addresses: string[], itemIds: string[]) {
   return `
 select owner, item_id AS "itemId"
-from nfts
+from ${schema}.nfts
 where owner in (${addresses.map((address) => `'${address}'`).join(',')})
 and item_id in (${itemIds.map((itemId) => `'${itemId}'`).join(',')});`
 }
@@ -35,7 +35,13 @@ export async function ownsItemsByAddress(
     }))
   }
 
-  const query = createQuery(addresses, allItemIds)
+  const schema = await components.database.getLatestChainSchema('mumbai')
+
+  if (!schema) {
+    return []
+  }
+
+  const query = createQuery(schema, addresses, allItemIds)
 
   const queryResult = await components.database.queryRaw<{ owner: string; itemId: string }>(query, {
     query: 'owns_items_by_address',

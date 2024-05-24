@@ -1,5 +1,5 @@
 import { Pool, PoolConfig, QueryResultRow } from 'pg'
-import { SQLStatement } from 'sql-template-strings'
+import SQL, { SQLStatement } from 'sql-template-strings'
 import { AppComponents } from '../types'
 import { IMetricsComponent } from '@well-known-components/interfaces'
 
@@ -23,6 +23,7 @@ export type Database = {
     query: string,
     metricLabels?: IMetricsComponent.Labels
   ) => Promise<DatabaseResult<T>>
+  getLatestChainSchema: (chain: string) => Promise<string | undefined>
 }
 
 export function createDatabaseComponent(
@@ -47,6 +48,20 @@ export function createDatabaseComponent(
   }
 
   return {
+    async getLatestChainSchema(chainName: string): Promise<string | undefined> {
+      const query = SQL`
+      SELECT
+          entity_schema
+      FROM
+          substreams.network_schema
+      WHERE
+          LOWER(network) = LOWER(${chainName})
+      `
+      const result = await pool.query<{ entity_schema: string }>(query)
+      const schema = result.rows[0].entity_schema
+
+      return schema
+    },
     async query<T extends QueryResultRow>(sql: SQLStatement): Promise<DatabaseResult<T>> {
       const rows = await pool.query<T>(sql)
       return {

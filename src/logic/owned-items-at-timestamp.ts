@@ -1,4 +1,4 @@
-import { BlockchainCollectionV2Asset, parseUrn as resolverParseUrn } from '@dcl/urn-resolver'
+import { BlockchainCollectionV2Item, parseUrn as resolverParseUrn } from '@dcl/urn-resolver'
 import { AppComponents } from '../types'
 
 export async function parseUrn(urn: string) {
@@ -9,41 +9,55 @@ export async function parseUrn(urn: string) {
   }
 }
 
-function createQuery(address: string, collectionIds: string[], itemIds: string[], timestamp: number) {
-  return `
-select t.collection_id, n.item_id
-from nfts n
-join transfers t on t.token_id = n.token_id and t.collection_id = n.collection_id
-where n.collection_id in (${collectionIds.map((collectionId) => `'${collectionId}'`).join(',')})
-and n.item_id in (${itemIds.map((itemId) => `'${itemId}'`).join(',')})
-and to_address = '${address}'
-and block_timestamp <= ${timestamp}
-group by t.collection_id, n.item_id;`
-}
+// function createQuery(schema: string, address: string, nfts: string[], timestamp: number) {
+//   return `
+//     SELECT nft from ${schema}.transfers t
+//     WHERE
+//     t."to" = '${address}'
+//     AND t.nft IN (${nfts.map((nft) => `'${nft}'`).join(',')})
+//     AND t.timestamp <= ${timestamp}
+//   `
+// }
 
 export async function ownedItemsAtTimestamp(
   components: Pick<AppComponents, 'database'>,
   address: string,
-  itemUrns: BlockchainCollectionV2Asset[],
+  itemUrns: BlockchainCollectionV2Item[],
   atTimestamp: number
 ) {
   if (itemUrns.length === 0) {
     return []
   }
-  const collectionIds = itemUrns.map((urn) => urn.contractAddress)
-  const itemIds = itemUrns.map((urn) => `${urn.contractAddress}-${urn.id}`)
+  const nfts = itemUrns.map((urn) => `${urn.contractAddress}-${urn.tokenId}`)
 
-  const query = createQuery(address, collectionIds, itemIds, atTimestamp)
+  const schema = await components.database.getLatestChainSchema('mumbai')
 
-  const queryResult = await components.database.queryRaw<{ collection_id: string; item_id: string }>(query, {
+  if (!schema) {
+    return []
+  }
+
+  const query = `
+    WITH nfts_transfers AS (
+      SELECT * from ${schema}.transfers t
+      WHERE
+      t.nft IN (${nfts.map((nft) => `'${nft}'`).join(',')})
+      AND t.timestamp <= ${atTimestamp}
+      ORDER BY t.timestamp DESC
+    )
+    SELECT nft FROM nfts_transfers nt
+    WHERE nt."to" = '${address}'
+    AND nt.timestamp = (SELECT max(nt2.timestamp) FROM nfts_transfers nt2 WHERE nt.nft = nt2.nft);
+  `
+
+  const queryResult = await components.database.queryRaw<{ nft: string }>(query, {
     query: 'owned_items_at_timestamp',
     addresses: 1,
-    item_ids: itemIds.length
+    item_ids: nfts.length
   })
 
-  const ownedItemIds = new Set(queryResult.rows.map((row) => row.item_id))
+  const ownedItemIds = new Set(queryResult.rows.map((row) => row.nft))
 
   return itemUrns
-    .filter((urn) => ownedItemIds.has(`${urn.contractAddress}-${urn.id}`))
-    .map((urn) => `urn:${urn.namespace}:${urn.network}:collections-v2:${urn.contractAddress}:${urn.id}`)
+    .filter((urn) => ownedItemIds.has(`${urn.contractAddress}-${urn.tokenId}`))
+    .map((urn) => `urn:${urn.namespace}:${urn.network}:collections-v2:${urn.contractAddress}:${urn.id}:${urn.tokenId}`)
 }

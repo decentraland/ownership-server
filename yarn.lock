@@ -319,10 +319,10 @@
     ajv-errors "^3.0.0"
     ajv-keywords "^5.1.0"
 
-"@dcl/urn-resolver@^2.0.3":
-  version "2.0.3"
-  resolved "https://registry.yarnpkg.com/@dcl/urn-resolver/-/urn-resolver-2.0.3.tgz#1ec62b8cc1ab4eeb6073c5f06bd4b163e52da89b"
-  integrity sha512-/DaBj2ijznphQrbMkDXCudFa/f6IWfefv+C7DJNB1064n+yuxoIdCmYpp0lKjXMfSVkbJDjFS5bVaAzXVb265w==
+"@dcl/urn-resolver@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/@dcl/urn-resolver/-/urn-resolver-3.4.0.tgz#16c3d1d7d61b0345cdfd74c387d19df5d584bc9d"
+  integrity sha512-OKa4YTb03akx9Ic5YAjoF081gEsbd+1ITS1Gv33xlxNhkdA2p0jyWtqdZgzlCCMLbw+L6eIohRhhgqlmB0q32g==
 
 "@eslint-community/eslint-utils@^4.2.0":
   version "4.4.0"
